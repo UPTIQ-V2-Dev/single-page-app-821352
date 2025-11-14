@@ -3,6 +3,7 @@ import Joi from 'joi';
 
 const register = {
     body: Joi.object().keys({
+        name: Joi.string().required(),
         email: Joi.string().required().email(),
         password: Joi.string().required().custom(password)
     })
@@ -48,6 +49,8 @@ const verifyEmail = {
     })
 };
 
+const sendVerificationEmail = {};
+
 export default {
     register,
     login,
@@ -55,5 +58,6 @@ export default {
     refreshTokens,
     forgotPassword,
     resetPassword,
-    verifyEmail
+    verifyEmail,
+    sendVerificationEmail
 };

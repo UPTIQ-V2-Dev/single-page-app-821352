@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu, LogIn, LogOut, User } from 'lucide-react';
 import { useScrollToSection } from '@/hooks/useScrollToSection';
+import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
     { label: 'Home', id: 'hero' },
@@ -16,6 +18,9 @@ export const Header = () => {
     const { theme, setTheme } = useTheme();
     const { scrollToSection } = useScrollToSection();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const location = useLocation();
+    const { user, isAuthenticated, logout, isLogoutPending } = useAuth();
+    const isMainPage = location.pathname === '/';
 
     const handleNavClick = (sectionId: string) => {
         scrollToSection(sectionId);
@@ -32,25 +37,60 @@ export const Header = () => {
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
                     <div className="flex items-center">
-                        <h1 className="text-xl font-bold">Your App</h1>
+                        <Link to="/" className="text-xl font-bold hover:opacity-80 transition-opacity">
+                            Your App
+                        </Link>
                     </div>
 
                     {/* Desktop Navigation */}
-                    <nav className="hidden md:flex items-center gap-6">
-                        {navItems.map((item) => (
-                            <Button
-                                key={item.id}
-                                variant="ghost"
-                                onClick={() => handleNavClick(item.id)}
-                                className="text-sm font-medium hover:text-primary"
-                            >
-                                {item.label}
-                            </Button>
-                        ))}
-                    </nav>
+                    {isMainPage && (
+                        <nav className="hidden md:flex items-center gap-6">
+                            {navItems.map((item) => (
+                                <Button
+                                    key={item.id}
+                                    variant="ghost"
+                                    onClick={() => handleNavClick(item.id)}
+                                    className="text-sm font-medium hover:text-primary"
+                                >
+                                    {item.label}
+                                </Button>
+                            ))}
+                        </nav>
+                    )}
 
-                    {/* Theme Toggle & Mobile Menu */}
+                    {/* Auth & Theme Toggle & Mobile Menu */}
                     <div className="flex items-center gap-2">
+                        {/* Authentication Buttons */}
+                        {isAuthenticated ? (
+                            <div className="hidden md:flex items-center gap-2">
+                                <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-muted/50">
+                                    <User className="h-4 w-4" />
+                                    <span className="text-sm font-medium">{user?.name || user?.email}</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={logout}
+                                    disabled={isLogoutPending}
+                                >
+                                    <LogOut className="h-4 w-4 mr-2" />
+                                    {isLogoutPending ? 'Logging out...' : 'Logout'}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="hidden md:flex items-center gap-2">
+                                <Button asChild variant="ghost" size="sm">
+                                    <Link to="/login">
+                                        <LogIn className="h-4 w-4 mr-2" />
+                                        Sign In
+                                    </Link>
+                                </Button>
+                                <Button asChild size="sm">
+                                    <Link to="/signup">Sign Up</Link>
+                                </Button>
+                            </div>
+                        )}
+
                         <Button
                             variant="ghost"
                             size="icon"
@@ -76,7 +116,8 @@ export const Header = () => {
                             </SheetTrigger>
                             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                                 <nav className="flex flex-col gap-4 mt-8">
-                                    {navItems.map((item) => (
+                                    {/* Navigation Items (only on main page) */}
+                                    {isMainPage && navItems.map((item) => (
                                         <Button
                                             key={item.id}
                                             variant="ghost"
@@ -86,6 +127,42 @@ export const Header = () => {
                                             {item.label}
                                         </Button>
                                     ))}
+                                    
+                                    {/* Auth Items for Mobile */}
+                                    <div className="mt-6 pt-6 border-t space-y-3">
+                                        {isAuthenticated ? (
+                                            <>
+                                                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
+                                                    <User className="h-4 w-4" />
+                                                    <span className="text-sm font-medium">{user?.name || user?.email}</span>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        logout();
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    disabled={isLogoutPending}
+                                                    className="justify-start w-full"
+                                                >
+                                                    <LogOut className="h-4 w-4 mr-2" />
+                                                    {isLogoutPending ? 'Logging out...' : 'Logout'}
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Button asChild variant="ghost" className="justify-start w-full">
+                                                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                                                        <LogIn className="h-4 w-4 mr-2" />
+                                                        Sign In
+                                                    </Link>
+                                                </Button>
+                                                <Button asChild className="justify-start w-full">
+                                                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </nav>
                             </SheetContent>
                         </Sheet>

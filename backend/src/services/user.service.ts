@@ -11,7 +11,7 @@ import httpStatus from 'http-status';
  */
 const createUser = async (email: string, password: string, name?: string, role: Role = Role.USER): Promise<User> => {
     if (await getUserByEmail(email)) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Email already exists');
     }
     return prisma.user.create({
         data: {
@@ -24,7 +24,7 @@ const createUser = async (email: string, password: string, name?: string, role: 
 };
 
 /**
- * Query for users
+ * Query for users with pagination
  * @param {Object} filter - Prisma filter
  * @param {Object} options - Query options
  * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
@@ -40,20 +40,60 @@ const queryUsers = async <Key extends keyof User>(
         sortBy?: string;
         sortType?: 'asc' | 'desc';
     },
-    keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<User, Key>[]> => {
+    keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
+): Promise<{
+    results: Pick<User, Key>[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+}> => {
     const page = options.page ?? 1;
     const limit = options.limit ?? 10;
     const sortBy = options.sortBy;
     const sortType = options.sortType ?? 'desc';
-    const users = await prisma.user.findMany({
-        where: filter,
-        select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-        skip: page * limit,
-        take: limit,
-        orderBy: sortBy ? { [sortBy]: sortType } : undefined
-    });
-    return users as Pick<User, Key>[];
+    
+    // Parse sortBy if it includes direction (e.g., "name:asc")
+    let orderBy: any = undefined;
+    if (sortBy) {
+        const [field, direction] = sortBy.split(':');
+        orderBy = { [field]: direction === 'asc' ? 'asc' : 'desc' };
+    }
+
+    const skip = (page - 1) * limit;
+    
+    // Build where clause with proper filtering
+    const whereClause: any = {};
+    if ((filter as any).name) {
+        whereClause.name = {
+            contains: (filter as any).name,
+            mode: 'insensitive'
+        };
+    }
+    if ((filter as any).role) {
+        whereClause.role = (filter as any).role;
+    }
+    
+    const [users, totalResults] = await Promise.all([
+        prisma.user.findMany({
+            where: whereClause,
+            select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+            skip,
+            take: limit,
+            orderBy: orderBy || { createdAt: 'desc' }
+        }),
+        prisma.user.count({ where: whereClause })
+    ]);
+    
+    const totalPages = Math.ceil(totalResults / limit);
+    
+    return {
+        results: users as Pick<User, Key>[],
+        page,
+        limit,
+        totalPages,
+        totalResults
+    };
 };
 
 /**
@@ -97,7 +137,7 @@ const getUserByEmail = async <Key extends keyof User>(
 const updateUserById = async <Key extends keyof User>(
     userId: number,
     updateBody: Prisma.UserUpdateInput,
-    keys: Key[] = ['id', 'email', 'name', 'role'] as Key[]
+    keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key> | null> => {
     const user = await getUserById(userId, ['id', 'email', 'name']);
     if (!user) {
@@ -106,6 +146,12 @@ const updateUserById = async <Key extends keyof User>(
     if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
+    
+    // Hash password if it's being updated
+    if (updateBody.password && typeof updateBody.password === 'string') {
+        updateBody.password = await encryptPassword(updateBody.password);
+    }
+    
     const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: updateBody,

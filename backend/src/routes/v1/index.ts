@@ -1,5 +1,6 @@
 import config from '../../config/config.ts';
 import authRoute from './auth.route.ts';
+import contactRoute from './contact.route.ts';
 import docsRoute from './docs.route.ts';
 import mcpRoute from './mcp.route.ts';
 import userRoute from './user.route.ts';
@@ -15,6 +16,10 @@ const defaultRoutes = [
     {
         path: '/users',
         route: userRoute
+    },
+    {
+        path: '/api',
+        route: contactRoute
     },
     {
         path: '/mcp',

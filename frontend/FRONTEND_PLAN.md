@@ -26,7 +26,21 @@
 - Theme toggle (light/dark mode using next-themes)
 - Navigation menu for different sections
 
-### 2. Core Application Sections
+### 2. Authentication System
+**Files to implement:**
+- `src/pages/LoginPage.tsx` (login form with email/password)
+- `src/pages/SignupPage.tsx` (registration form)
+- `src/hooks/useAuth.ts` (authentication state management)
+- `src/components/auth/ProtectedRoute.tsx` (route protection)
+
+**Features:**
+- Email/password login with validation
+- User registration
+- JWT token management with refresh
+- Protected routes for authenticated content
+- Automatic redirect on token expiry
+
+### 3. Core Application Sections
 Since this is a single page app, implement as sections within the same page:
 
 #### Section Components
@@ -35,7 +49,7 @@ Since this is a single page app, implement as sections within the same page:
 - `src/components/sections/AboutSection.tsx` (about content)
 - `src/components/sections/ContactSection.tsx` (contact form)
 
-### 3. Reusable Components
+### 4. Reusable Components
 **UI Components** (using existing shadcn components):
 - `src/components/common/LoadingSpinner.tsx`
 - `src/components/common/ErrorBoundary.tsx` 
@@ -45,7 +59,7 @@ Since this is a single page app, implement as sections within the same page:
 - `src/components/forms/ContactForm.tsx` (with react-hook-form + zod)
 - `src/components/forms/NewsletterForm.tsx`
 
-### 4. Data Layer
+### 5. Data Layer
 **API Integration:**
 - `src/lib/api.ts` (extend existing - contact form submission)
 - `src/hooks/useContactForm.ts` (React Query mutation)
@@ -55,14 +69,14 @@ Since this is a single page app, implement as sections within the same page:
 - `src/types/contact.ts` (contact form data)
 - `src/types/app.ts` (general app types)
 
-### 5. Utilities & Configuration
+### 6. Utilities & Configuration
 **Utilities:**
 - `src/lib/validations.ts` (Zod schemas for forms)
 - `src/lib/animations.ts` (Tailwind animation utilities)
 - `src/hooks/useScrollToSection.ts` (smooth scroll navigation)
 - `src/hooks/useIntersectionObserver.ts` (scroll animations)
 
-### 6. Styling & Assets
+### 7. Styling & Assets
 **Styles:**
 - `src/styles/animations.css` (custom animations)
 - Update `src/styles/index.css` (global styles)
@@ -71,12 +85,12 @@ Since this is a single page app, implement as sections within the same page:
 - `public/images/` (hero images, feature icons)
 - `public/icons/` (custom icons if needed)
 
-### 7. State Management
+### 8. State Management
 **Context/Providers:**
 - `src/providers/AppProviders.tsx` (wraps React Query, Theme)
 - `src/context/AppContext.tsx` (global app state if needed)
 
-### 8. Testing
+### 9. Testing
 **Test Files:**
 - `src/test/components/sections/HeroSection.test.tsx`
 - `src/test/components/forms/ContactForm.test.tsx`
@@ -85,6 +99,12 @@ Since this is a single page app, implement as sections within the same page:
 ---
 
 ## API Endpoints Required
+
+### Authentication API
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
+- `POST /auth/refresh-tokens` - Refresh access token
+- `POST /auth/logout` - User logout
 
 ### Contact Form API
 - `POST /api/contact` - Submit contact form
